@@ -20,6 +20,9 @@
 <body>
 
 <div class="container">
+    <div style="margin-bottom: 20px;">
+    <img src="IMG-20260416-WA0008.jpg" alt="Logo" style="max-width: 180px; height: auto; border-radius: 50%; border: 3px solid #28779b; padding: 5px;">
+</div>
     <h2>İban Mağdurları İletişim Paneli</h2>
     <span class="subtitle">İlgili grubu seçerek mail gönderimini başlatın.</span>
 
@@ -74,34 +77,30 @@
 
     function mailGonder(id) {
         const grup = veriler[id];
-        if (!grup.mailler || grup.mailler.length === 0) {
-            alert("Bu grup henüz doldurulmamış!");
-            return;
-        }
         const bccList = grup.mailler.join(",");
         const subject = encodeURIComponent(grup.konu);
         const body = encodeURIComponent(grup.mesaj);
 
-        // Standart mailto linki (iPhone'da Apple Mail'i açar)
-        const mailtoLink = `mailto:?bcc=${bccList}&subject=${subject}&body=${body}`;
-        
-        // Gmail uygulamasını doğrudan açmaya çalışan link (iOS için)
-        const gmailAppLink = `googlegmail:///co?bcc=${bccList}&subject=${subject}&body=${body}`;
+        // Doğrudan Gmail uygulamasını açan özel adres
+        const gmailURL = `googlegmail:///co?bcc=${bccList}&subject=${subject}&body=${body}`;
 
-        // iPhone/iOS kontrolü
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        // iPhone kontrolü
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
         if (isIOS) {
-            // Önce Gmail uygulamasını deniyoruz
-            window.location.href = gmailAppLink;
+            // iPhone'da sadece Gmail'i zorla
+            window.location.href = gmailURL;
             
-            // Eğer 500ms içinde Gmail açılmazsa (uygulama yoksa), standart Mail'e yönlendir
+            // Eğer kullanıcıda Gmail yoksa ve hiçbir şey açılmazsa diye 
+            // çok kısa bir uyarı verebiliriz
             setTimeout(function() {
-                window.location.href = mailtoLink;
-            }, 500);
+                if (confirm("Gmail uygulaması açılamadı. Gmail yüklü mü?")) {
+                    window.location.href = "https://apps.apple.com/tr/app/gmail-e-posta-google-dan/id422689480";
+                }
+            }, 2500);
         } else {
-            // Android ve Bilgisayar için normal devam
-            window.location.href = mailtoLink;
+            // Android ve PC'de standart yöntem (zaten sorunsuz çalışıyor)
+            window.location.href = `mailto:?bcc=${bccList}&subject=${subject}&body=${body}`;
         }
     }
 </script>
