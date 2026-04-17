@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TCK 158 İBAN Mağdurları Platformu</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg-dark-gray: #12121215; 
@@ -179,7 +178,9 @@
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://ibanmagdurlaritakip-default-rtdb.firebaseio.com/" };
+        const firebaseConfig = { 
+    databaseURL: "https://ibanmagdurlaritakip-default-rtdb.firebaseio.com/" 
+};
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let currentPhone = "";
@@ -238,30 +239,40 @@
             } else { alert("Hata: Telefon 4 hane ve onay gereklidir."); }
         }
 
-        function sendMail(id) {
-            if(!veriler[id]) return;
-            const data = veriler[id];
-            const bcc = data.mailler.join(',');
-            const konu = encodeURIComponent(data.konu);
-            const mesaj = encodeURIComponent(data.mesaj);
+       function sendMail(id) {
+    if(!veriler[id]) return;
+    const data = veriler[id];
+    const bcc = data.mailler.join(',');
+    const konu = encodeURIComponent(data.konu);
+    const mesaj = encodeURIComponent(data.mesaj);
 
-            db.ref('stats/total').transaction(c => (c || 0) + 1);
-            db.ref('users/' + currentPhone).transaction(u => {
-                if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
-                return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
-            });
+    // Veritabanına yazma işlemi ve hata kontrolü
+    db.ref('stats/total').transaction(c => (c || 0) + 1)
+        .catch(err => alert("Toplam Sayaç Hatası: " + err.message));
 
-            const isiPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const gmailUrl = `googlegmail:///co?bcc=${bcc}&subject=${konu}&body=${mesaj}`;
-            const mailtoUrl = `mailto:?bcc=${bcc}&subject=${konu}&body=${mesaj}`;
+    db.ref('users/' + currentPhone).transaction(u => {
+        if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
+        return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
+    })
+    .then(() => {
+        console.log("Veri başarıyla kaydedildi.");
+    })
+    .catch(err => {
+        alert("Kullanıcı Kayıt Hatası: " + err.message + "\nLütfen Firebase kurallarını kontrol edin.");
+    });
 
-            if(isiPhone) {
-                window.location.href = gmailUrl;
-                setTimeout(() => { window.location.href = mailtoUrl; }, 1200);
-            } else {
-                window.location.href = mailtoUrl;
-            }
-        }
+    // Mail Gönderme İşlemi
+    const isiPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const gmailUrl = `googlegmail:///co?bcc=${bcc}&subject=${konu}&body=${mesaj}`;
+    const mailtoUrl = `mailto:?bcc=${bcc}&subject=${konu}&body=${mesaj}`;
+
+    if(isiPhone) {
+        window.location.href = gmailUrl;
+        setTimeout(() => { window.location.href = mailtoUrl; }, 1200);
+    } else {
+        window.location.href = mailtoUrl;
+    }
+}
 
         function adminAuth() {
             const pass = document.getElementById('adminPass').value;
