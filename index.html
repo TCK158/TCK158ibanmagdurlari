@@ -1,4 +1,4 @@
-f<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -252,36 +252,41 @@ f<!DOCTYPE html>
             } else { alert("Hata: Telefon 4 hane ve onay gereklidir."); }
         }
 
-      function sendMail(id) {
+     function sendMail(id) {
             const data = veriler[id];
             
-            // Veritabanı kayıt işlemleri (Aynı kalıyor)
+            // Veritabanı işlemleri (Aynı kalıyor)
             db.ref('stats/total').transaction(c => (c || 0) + 1);
             db.ref('users/' + currentPhone).transaction(u => {
                 if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
                 return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
             });
 
-            // İçerikleri hazırla
             const subject = encodeURIComponent(data.konu);
             const body = encodeURIComponent(data.mesaj);
             const bcc = data.mailler.join(',');
 
-            // YÖNTEM: Gmail Web Linki (Uygulamayı tetikleme şansı en yüksek olan)
-            // Bu link Gmail uygulaması varsa iPhone'da "Gmail'de Açılsın mı?" uyarısı çıkarır.
+            // Gmail Web URL'si
             const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${bcc}&su=${subject}&body=${body}`;
             
-            // Klasik yöntem (Yedek olarak)
-            const mailtoUrl = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
-
-            // Önce Gmail'in web tabanlı komutunu deniyoruz
+            // Yeni pencerede Gmail'i açmayı dene
             const newWindow = window.open(gmailWebUrl, '_blank');
 
-            // Eğer tarayıcı yeni pencereyi engellerse veya 1 saniye içinde tepki vermezse klasik mailto'ya dön
-            setTimeout(function() {
-                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                    window.location.href = mailtoUrl;
-                }
+            // Safari'de kalan boş sekmeyi kapatma veya temizleme mantığı
+            if (newWindow) {
+                // Mail tetiklendikten 2 saniye sonra (kullanıcı uygulamaya geçmiş olur)
+                // Safari'deki o boş pencereyi kapatmaya zorla
+                setTimeout(function() {
+                    try {
+                        // Eğer kullanıcı hala Safari'deyse ana menüye döndür ve sekmeyi pasifize et
+                        showScreen('mailPanel'); 
+                    } catch (e) {}
+                }, 2000);
+            } else {
+                // Eğer pop-up engelleyici varsa normal mailto'yu çalıştır
+                window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+            }
+        }
             }, 1000);
         }
 
