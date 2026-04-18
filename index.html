@@ -252,7 +252,7 @@ f<!DOCTYPE html>
             } else { alert("Hata: Telefon 4 hane ve onay gereklidir."); }
         }
 
-       function sendMail(id) {
+      function sendMail(id) {
             const data = veriler[id];
             
             // Veritabanı kayıt işlemleri (Aynı kalıyor)
@@ -262,22 +262,27 @@ f<!DOCTYPE html>
                 return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
             });
 
-            // Mail içerik hazırlığı
+            // İçerikleri hazırla
             const subject = encodeURIComponent(data.konu);
             const body = encodeURIComponent(data.mesaj);
             const bcc = data.mailler.join(',');
 
-            // iPhone/Gmail Yönlendirme Mantığı
-            const gmailUrl = `googlegmail:///co?bcc=${bcc}&subject=${subject}&body=${body}`;
-            const standardUrl = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+            // YÖNTEM: Gmail Web Linki (Uygulamayı tetikleme şansı en yüksek olan)
+            // Bu link Gmail uygulaması varsa iPhone'da "Gmail'de Açılsın mı?" uyarısı çıkarır.
+            const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${bcc}&su=${subject}&body=${body}`;
+            
+            // Klasik yöntem (Yedek olarak)
+            const mailtoUrl = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
 
-            // Önce Gmail uygulamasını açmayı dene
-            window.location.href = gmailUrl;
+            // Önce Gmail'in web tabanlı komutunu deniyoruz
+            const newWindow = window.open(gmailWebUrl, '_blank');
 
-            // Eğer 500ms içinde Gmail açılmazsa (uygulama yoksa), standart maili aç
+            // Eğer tarayıcı yeni pencereyi engellerse veya 1 saniye içinde tepki vermezse klasik mailto'ya dön
             setTimeout(function() {
-                window.location.href = standardUrl;
-            }, 500);
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    window.location.href = mailtoUrl;
+                }
+            }, 1000);
         }
 
         function adminAuth() {
