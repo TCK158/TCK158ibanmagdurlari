@@ -1,4 +1,4 @@
-f<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -253,45 +253,39 @@ f<!DOCTYPE html>
         }
 
       function sendMail(id) {
-            const data = veriler[id];
-            
-            // Veritabanı işlemleri (Aynı kalıyor)
-            db.ref('stats/total').transaction(c => (c || 0) + 1);
-            db.ref('users/' + currentPhone).transaction(u => {
-                if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
-                return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
-            });
+    const data = veriler[id];
+    
+    // Veritabanı işlemleri (Aynı kalıyor)
+    db.ref('stats/total').transaction(c => (c || 0) + 1);
+    db.ref('users/' + currentPhone).transaction(u => {
+        if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
+        return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
+    });
 
-            const subject = encodeURIComponent(data.konu);
-            const body = encodeURIComponent(data.mesaj);
-            const bcc = data.mailler.join(',');
+    const subject = encodeURIComponent(data.konu);
+    const body = encodeURIComponent(data.mesaj);
+    const bcc = data.mailler.join(',');
 
-            // İşletim sistemini kontrol et
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-            let finalUrl = "";
-
-            if (isAndroid) {
-                // Android için doğrudan Gmail Uygulaması komutu
-                finalUrl = `intent://mailto:?bcc=${bcc}&subject=${subject}&body=${body}#Intent;scheme=mailto;package=com.google.android.gm;end`;
-            } else if (isiOS) {
-                // iPhone için doğrudan Gmail Uygulaması komutu
-                finalUrl = `googlegmail:///co?bcc=${bcc}&subject=${subject}&body=${body}`;
-            } else {
-                // Masaüstü veya diğerleri için standart
-                finalUrl = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+    if (isAndroid) {
+        // Android için mevcut başarılı yöntem
+        window.location.href = `intent://mailto:?bcc=${bcc}&subject=${subject}&body=${body}#Intent;scheme=mailto;package=com.google.android.gm;end`;
+    } else if (isiOS) {
+        // iPhone için "Soft" geçiş: Önce standart mailto deniyoruz (Uyarı çıkarmaz)
+        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+        
+        // Eğer 500ms içinde uygulama açılmazsa (kullanıcı hala sayfadaysa) Gmail'i zorla
+        setTimeout(function() {
+            if (document.hasFocus()) {
+                window.location.href = `googlegmail:///co?bcc=${bcc}&subject=${subject}&body=${body}`;
             }
-
-            // Mevcut pencerede aç (Yeni sekme açıp kirlilik yapmaması için)
-            window.location.href = finalUrl;
-
-            // iPhone'da Gmail yüklü değilse 1 saniye sonra standart maili aç (Yedek Plan)
-            if (isiOS) {
-                setTimeout(function() {
-                    window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
-                }, 1000);
-            }
+        }, 500);
+    } else {
+        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+    }
+}
         }
 
         function adminAuth() {
