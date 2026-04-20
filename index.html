@@ -253,40 +253,29 @@
         }
 
  function sendMail(id) {
-    const data = veriler[id];
-    
-    // Veritabanı işlemleri (Sorunsuz çalışmaya devam eder)
-    db.ref('stats/total').transaction(c => (c || 0) + 1);
-    db.ref('users/' + currentPhone).transaction(u => {
-        if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
-        return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
-    });
+            const data = veriler[id];
+            
+            // Veritabanı işlemleri
+            db.ref('stats/total').transaction(c => (c || 0) + 1);
+            db.ref('users/' + currentPhone).transaction(u => {
+                if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
+                return { count: (u.count || 0) + 1, last: new Date().toLocaleTimeString('tr-TR') };
+            });
 
-    const subject = encodeURIComponent(data.konu);
-    const body = encodeURIComponent(data.mesaj);
-    const bcc = data.mailler.join(',');
+            const subject = encodeURIComponent(data.konu);
+            const body = encodeURIComponent(data.mesaj);
+            const bcc = data.mailler.join(',');
 
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if (isAndroid) {
-        // Android için en sağlam yöntem (Değişmedi)
-        window.location.href = `intent://mailto:?bcc=${bcc}&subject=${subject}&body=${body}#Intent;scheme=mailto;package=com.google.android.gm;end`;
-    } else if (isiOS) {
-        // iPhone için buton kilidini açan en basit yöntem
-        // Önce standart yolu deniyoruz, bu onay kutusu sormaz
-        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
-        
-        // Eğer kullanıcıda Gmail varsayılan ise yukarıdaki yetecek.
-        // Gmail yüklü ama varsayılan değilse, 1 saniye sonra bu çalışır:
-        setTimeout(function() {
-            window.location.href = `googlegmail:///co?bcc=${bcc}&subject=${subject}&body=${body}`;
-        }, 1000);
-    } else {
-        // Bilgisayar için standart
-        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
-    }
-}
+            // En güvenli ve butonları kilitlemeyen yönlendirme
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+                window.location.href = `intent://mailto:?bcc=${bcc}&subject=${subject}&body=${body}#Intent;scheme=mailto;package=com.google.android.gm;end`;
+            } else {
+                // iPhone ve diğerleri için en basit, onaysız yöntem
+                window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+            }
+        }
         }
 
         function adminAuth() {
