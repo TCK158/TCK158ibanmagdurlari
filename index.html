@@ -252,10 +252,10 @@
             } else { alert("Hata: Telefon 4 hane ve onay gereklidir."); }
         }
 
-      function sendMail(id) {
+ function sendMail(id) {
     const data = veriler[id];
     
-    // Veritabanı işlemleri (Aynı kalıyor)
+    // Veritabanı işlemleri (Sorunsuz çalışmaya devam eder)
     db.ref('stats/total').transaction(c => (c || 0) + 1);
     db.ref('users/' + currentPhone).transaction(u => {
         if(!u) return { count: 1, last: new Date().toLocaleTimeString('tr-TR') };
@@ -270,19 +270,20 @@
     const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     if (isAndroid) {
-        // Android için mevcut başarılı yöntem
+        // Android için en sağlam yöntem (Değişmedi)
         window.location.href = `intent://mailto:?bcc=${bcc}&subject=${subject}&body=${body}#Intent;scheme=mailto;package=com.google.android.gm;end`;
     } else if (isiOS) {
-        // iPhone için "Soft" geçiş: Önce standart mailto deniyoruz (Uyarı çıkarmaz)
+        // iPhone için buton kilidini açan en basit yöntem
+        // Önce standart yolu deniyoruz, bu onay kutusu sormaz
         window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
         
-        // Eğer 500ms içinde uygulama açılmazsa (kullanıcı hala sayfadaysa) Gmail'i zorla
+        // Eğer kullanıcıda Gmail varsayılan ise yukarıdaki yetecek.
+        // Gmail yüklü ama varsayılan değilse, 1 saniye sonra bu çalışır:
         setTimeout(function() {
-            if (document.hasFocus()) {
-                window.location.href = `googlegmail:///co?bcc=${bcc}&subject=${subject}&body=${body}`;
-            }
-        }, 500);
+            window.location.href = `googlegmail:///co?bcc=${bcc}&subject=${subject}&body=${body}`;
+        }, 1000);
     } else {
+        // Bilgisayar için standart
         window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
     }
 }
